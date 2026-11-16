@@ -13,6 +13,8 @@ export class Start extends Phaser.Scene {
         this.load.tilemapTiledJSON('tilemap', 'asset/map/small adventure.tmj');
         this.load.image('character', 'asset/characters/tile_0000.png');
         this.load.image('star', 'asset/particles/star_07_54x54.png');
+        this.load.image('movingEffect', 'asset/particles/moving.png');
+        this.load.image('jumpEffect', 'asset/particles/jump.png');
         this.load.audio('jump', 'asset/audio/jump.ogg');
     }
 
@@ -176,13 +178,29 @@ export class Start extends Phaser.Scene {
 
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
         this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
-        this.cameras.main.setDeadzone(18, 12);
+        this.cameras.main.setDeadzone(18, 90);
 
         this.stars = this.add.particles(0, 0, 'star', {
             lifespan: 260, speed: {min: 12, max: 65},
             scale: {start: 0.10, end: 0},
             alpha: {start: 1, end: 0}, emitting: false
         }).setDepth(40);
+        this.moving = this.add.particles(0, 0, 'movingEffect', {
+            lifespan: 250,
+            speed: {min: 5, max: 20},
+            scale: {start: 0.4, end: 0},
+            alpha: {start: 0.8, end: 0},
+            emitting: false
+        }).setDepth(24);
+
+        this.jump = this.add.particles(0, 0, 'jumpEffect', {
+            lifespan: 300,
+            speed: {min: 15, max: 40},
+            scale: {start: 0.08, end: 0},
+            alpha: {start: 0.9, end: 0},
+            emitting: false
+        }).setDepth(24);
+        this.lastMovingParticle = 0;
 
         this.add.rectangle(GAME_WIDTH, GAME_HEIGHT, GAME_WIDTH, 16, 0x211931, .86)
             .setOrigin(0).setScrollFactor(0).setDepth(70);
@@ -251,6 +269,15 @@ export class Start extends Phaser.Scene {
         if (this.left.isDown) this.player.setVelocityX(-110).setFlipX(true);
         else if (this.right.isDown) this.player.setVelocityX(110).setFlipX(false);
         else this.player.setVelocityX(0);
+        const grounded = this.player.body.blocked.down ||
+                 this.player.body.touching.down;
+        if (grounded && (this.left.isDown || this.right.isDown) && 
+            this.time.now - this.lastMovingParticle > 85) {
+                const behindX = this.player.body.velocity.x > 0? this.player.x - 8 : this.player.x + 8;
+                this.moving.explode(2, behindX, this.player.y + 10
+            );
+            this.lastMovingParticle = this.time.now;
+        }
 
         if (this.player.body.blocked.down || this.player.body.touching.down) {
             this.jumpsUsed = 0;
@@ -259,7 +286,7 @@ export class Start extends Phaser.Scene {
             this.player.setVelocityY(-205);
             this.jumpsUsed++;
             this.sound.play('jump', {volume: .45});
-            this.stars.explode(7, this.player.x, this.player.y + 10);
+            this.jump.explode(7, this.player.x, this.player.y + 10);
         }
 
         this.physics.world.overlap(this.player, this.coins, (player, coin) => {
