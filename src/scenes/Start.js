@@ -61,7 +61,7 @@ export class Start extends Phaser.Scene {
         this.add.text(GAME_WIDTH / 2, 25, 'LEVEL SELECT', {
             fontFamily: 'Arial, sans-serif', fontStyle: 'bold', fontSize: '39px', color: '#ffe9bb'
         }).setOrigin(0.5).setScale(1/3);
-        this.addButton(66, 'SMALL ADVENTURE', () => this.startAdventure());
+        this.addButton(66, 'Candy', () => this.startAdventure());
         this.addButton(96, 'BACK', () => this.showMainMenu());
     }
 
@@ -178,7 +178,7 @@ export class Start extends Phaser.Scene {
 
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
         this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
-        this.cameras.main.setDeadzone(18, 90);
+        this.cameras.main.setDeadzone(18, 12);
 
         this.stars = this.add.particles(0, 0, 'star', {
             lifespan: 260, speed: {min: 12, max: 65},
@@ -193,7 +193,7 @@ export class Start extends Phaser.Scene {
             emitting: false
         }).setDepth(24);
 
-        this.jump = this.add.particles(0, 0, 'jumpEffect', {
+        this.jumpeffect = this.add.particles(0, 0, 'jumpEffect', {
             lifespan: 300,
             speed: {min: 15, max: 40},
             scale: {start: 0.08, end: 0},
@@ -286,7 +286,7 @@ export class Start extends Phaser.Scene {
             this.player.setVelocityY(-205);
             this.jumpsUsed++;
             this.sound.play('jump', {volume: .45});
-            this.jump.explode(7, this.player.x, this.player.y + 10);
+            this.jumpeffect.explode(7, this.player.x, this.player.y + 10);
         }
 
         this.physics.world.overlap(this.player, this.coins, (player, coin) => {
