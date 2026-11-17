@@ -132,6 +132,9 @@ export class Start extends Phaser.Scene {
                 }
             }
         }
+
+        this.factoryCollectiblesRequired = isFactory ? this.coins.getChildren().length : 0;
+
         const particles = this.map.getObjectLayer('particles');
         if (particles) {
             for (const obj of particles.objects) {
@@ -189,7 +192,6 @@ export class Start extends Phaser.Scene {
 
     createPoisonZones() {
         if (this.currentLevel !== 'factory') return;
-        // Support old "posion" spelling so that older maps won't silently lose hazards.
         const poisonLayer = this.map.getObjectLayer('poison') || this.map.getObjectLayer('posion');
         if (!poisonLayer) return;
         for (const obj of poisonLayer.objects) {
@@ -214,6 +216,8 @@ export class Start extends Phaser.Scene {
         this.level = 1;
         this.doublePoints = false;
         this.jumpsUsed = 0;
+        this.factoryCollectiblesCollected = 0;
+        this.lastGoalWarningAt = -Infinity;
 
         this.makeTilemap();
         const character = this.map.getObjectLayer('character');
@@ -318,7 +322,10 @@ export class Start extends Phaser.Scene {
 
     updateScore() {
         const multiplier = Math.pow(1.25, this.level - 1) * (this.doublePoints ? 2 : 1);
-        this.scoreLabel.setText(`Score ${this.score}  Lv ${this.level}  x${multiplier.toFixed(2)}`);
+        const collectiblesStatus = this.currentLevel === 'factory'
+            ? `  Items ${this.factoryCollectiblesCollected}/${this.factoryCollectiblesRequired}`
+            : '';
+        this.scoreLabel.setText(`Score ${this.score}  Lv ${this.level}  x${multiplier.toFixed(2)}${collectiblesStatus}`);
     }
 
     showPowerupMessage(text) {
@@ -350,6 +357,16 @@ export class Start extends Phaser.Scene {
 
     completeLevel() {
         if (this.completed) return;
+        if (this.currentLevel === 'factory' &&
+            this.factoryCollectiblesCollected < this.factoryCollectiblesRequired) {
+            if (this.time.now - this.lastGoalWarningAt >= 2000) {
+                this.showPowerupMessage(
+                    `Collect all items first! (${this.factoryCollectiblesCollected}/${this.factoryCollectiblesRequired})`
+                );
+                this.lastGoalWarningAt = this.time.now;
+            }
+            return;
+        }
         this.completed = true;
         this.player.setVelocity(0, 0);
         this.registry.set('finalScore', this.score);
@@ -376,16 +393,23 @@ export class Start extends Phaser.Scene {
         if (this.player.body.blocked.down || this.player.body.touching.down) {
             this.jumpsUsed = 0;
         }
-        if (Phaser.Input.Keyboard.JustDown(this.jump) && this.jumpsUsed < 2) {
-            this.player.setVelocityY(-205);
-            this.jumpsUsed++;
-            this.sound.play('jump', {volume: .45});
-            this.jumpeffect.explode(7, this.player.x, this.player.y + 10);
+        
+        const maxJumps = 2;
+        if (Phaser.Input.Keyboard.JustDown(this.jump) && this.jumpsUsed < maxJumps) {
+        const jumpSpeed = this.currentLevel === 'factory'? (this.jumpsUsed === 0 ? -205 : -175): -205;
+
+        this.player.setVelocityY(jumpSpeed);
+        this.jumpsUsed++;
+        this.sound.play('jump', {volume: .45});
+        this.jumpeffect.explode(7, this.player.x, this.player.y + 10);
         }
 
         this.physics.world.overlap(this.player, this.coins, (player, coin) => {
             if (!coin.active) return;
             coin.disableBody(true, true);
+            if (this.currentLevel === 'factory') {
+                this.factoryCollectiblesCollected++;
+            }
             const multiplier = Math.pow(1.25, this.level - 1) * (this.doublePoints ? 2 : 1);
             this.score += Math.round(coin.value * multiplier);
             this.checkLevelUp();
