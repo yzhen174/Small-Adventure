@@ -5,11 +5,9 @@ export class GameOver extends Phaser.Scene {
         super('GameOver');
     }
 
-    init(data) {
-        this.finalScore = (data && data.score) || 0;
-    }
-
     create() {
+        this.finalScore = this.registry.get('finalScore') || 0;
+        this.currentLevel = this.registry.get('currentLevel') === 'factory' ? 'factory' : 'candy';
         this.cameras.main.setZoom(3);
         this.cameras.main.setScroll(-180, -120);
         this.cameras.main.setBackgroundColor('#292239');
@@ -23,7 +21,8 @@ export class GameOver extends Phaser.Scene {
         }).setOrigin(0.5).setScale(1/3);
 
         this.addButton(69, 'RESTART', () => {
-            this.scene.start('Start', { startGame: true });
+            this.registry.set('startImmediately', true);
+            this.scene.start('Start');
         });
         this.addButton(97, 'MAIN MENU', () => {
             this.scene.start('Start');

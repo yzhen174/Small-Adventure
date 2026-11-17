@@ -11,6 +11,14 @@ export class Start extends Phaser.Scene {
             frameWidth: 18, frameHeight: 18, spacing: 1
         });
         this.load.tilemapTiledJSON('tilemap', 'asset/map/small adventure.tmj');
+        this.load.tilemapTiledJSON('factoryMap', 'asset/map/factory.tmj');
+        this.load.image('factoryIndustrial', 'asset/lvl1/industry (2).png');
+        this.load.spritesheet('factoryIndustrialFrames', 'asset/lvl1/industry (2).png', {
+            frameWidth: 18, frameHeight: 18
+        });
+        this.load.image('factoryTinyPacked', 'asset/lvl1/factory (2).png');
+        this.load.image('factoryTinyTiles', 'asset/lvl1/factory (1).png');
+        this.load.image('factoryCharacter', 'asset/characters/tile_0120.png');
         this.load.image('character', 'asset/characters/tile_0000.png');
         this.load.image('star', 'asset/particles/star_07_54x54.png');
         this.load.image('movingEffect', 'asset/particles/moving.png');
@@ -18,17 +26,23 @@ export class Start extends Phaser.Scene {
         this.load.audio('jump', 'asset/audio/jump.ogg');
     }
 
-    init(data) {
-        this.startImmediately = Boolean(data && data.startGame);
-    }
-
     create() {
         this.inGame = false;
         this.completed = false;
         this.cameras.main.setZoom(3);
         this.cameras.main.setBackgroundColor('#292239');
-        if (this.startImmediately) this.startAdventure();
-        else this.showMainMenu();
+
+        const startImmediately = this.registry.get('startImmediately') === true;
+        const previousLevels = this.registry.get('completedLevels');
+        this.completedLevels = startImmediately && Array.isArray(previousLevels)
+            ? previousLevels.filter(name => name === 'candy' || name === 'factory')
+            : [];
+        this.registry.set('startImmediately', false);
+        if (startImmediately) {
+            this.startAdventure(this.registry.get('currentLevel'));
+        } else {
+            this.showMainMenu();
+        }
     }
 
     addButton(y, label, callback) {
@@ -45,6 +59,9 @@ export class Start extends Phaser.Scene {
 
     showMainMenu() {
         this.inGame = false;
+        this.completedLevels = [];
+        this.registry.set('completedLevels', []);
+        this.registry.set('startImmediately', false);
         this.children.removeAll(true);
         this.cameras.main.stopFollow();
         this.cameras.main.setScroll(-180, -120);
@@ -61,20 +78,35 @@ export class Start extends Phaser.Scene {
         this.add.text(GAME_WIDTH / 2, 25, 'LEVEL SELECT', {
             fontFamily: 'Arial, sans-serif', fontStyle: 'bold', fontSize: '39px', color: '#ffe9bb'
         }).setOrigin(0.5).setScale(1/3);
-        this.addButton(66, 'Candy', () => this.startAdventure());
-        this.addButton(96, 'BACK', () => this.showMainMenu());
+        this.addButton(52, 'CANDY', () => this.startAdventure('candy'));
+        this.addButton(77, 'FACTORY', () => this.startAdventure('factory'));
+        this.addButton(103, 'BACK', () => this.showMainMenu());
     }
 
     makeTilemap() {
-        this.map = this.make.tilemap({key: 'tilemap'});
-        const tileset = this.map.addTilesetImage('landscape', 'landscape', 18, 18, 0, 1);
-        if (!tileset) throw new Error('Cannot create the landscape Tileset');
+        const isFactory = this.currentLevel === 'factory';
+        this.map = this.make.tilemap({key: isFactory ? 'factoryMap' : 'tilemap'});
+        let tilesets;
+        if (isFactory) {
+            tilesets = [
+                this.map.addTilesetImage('tilemap_packed', 'factoryIndustrial', 18, 18, 0, 0),
+                this.map.addTilesetImage('tilemap_packed2', 'factoryTinyPacked', 18, 18, 0, 0),
+                this.map.addTilesetImage('tilemap', 'factoryTinyTiles', 18, 18, 0, 0)
+            ];
+        } else {
+            tilesets = [this.map.addTilesetImage('landscape', 'landscape', 18, 18, 0, 1)];
+        }
+        if (tilesets.some(t => !t)) throw new Error('Could not load the map tilesets');
 
-        this.map.createLayer('background', tileset, 0, 0).setDepth(0);
-        this.ground = this.map.createLayer('ground', tileset, 0, 0).setDepth(3);
-        this.map.createLayer('decorations', tileset, 0, 0).setDepth(5);
-        this.map.createLayer('decoration2', tileset, 0, 0).setDepth(6);
-        this.platforms = this.map.createLayer('platforms', tileset, 0, 0).setDepth(8);
+        this.map.createLayer('background', tilesets, 0, 0).setDepth(0);
+        this.ground = this.map.createLayer('ground', tilesets, 0, 0).setDepth(3);
+        if (isFactory) {
+            this.map.createLayer('decoration', tilesets, 0, 0).setDepth(5);
+        } else {
+            this.map.createLayer('decorations', tilesets, 0, 0).setDepth(5);
+            this.map.createLayer('decoration2', tilesets, 0, 0).setDepth(6);
+        }
+        this.platforms = this.map.createLayer('platforms', tilesets, 0, 0).setDepth(8);
         this.coins = this.add.group();
         this.powerups = this.add.group();
         const objects = this.map.getObjectLayer('collectibles');
@@ -85,10 +117,11 @@ export class Start extends Phaser.Scene {
                     (obj.properties || []).map(p => [p.name, p.value])
                 );
                 const frame = (obj.gid & 0x1fffffff) - 1;
+                const frameKey = isFactory ? 'factoryIndustrialFrames' : 'tileframes';
                 const collectible = this.physics.add.staticSprite(
                     obj.x + (obj.width || 18) / 2,
                     obj.y - (obj.height || 18) / 2,
-                    'tileframes', frame
+                    frameKey, frame
                 ).setDepth(18);
                 if (properties.powerup === 'double points') {
                     collectible.powerup_type = properties.powerup;
@@ -109,7 +142,8 @@ export class Start extends Phaser.Scene {
         }
 
         this.movingPlatforms = [];
-        this.createMovingPlatforms();
+        if (isFactory) this.createFactoryMovingPlatform();
+        else this.createMovingPlatforms();
     }
 
     createMovingPlatforms() {
@@ -133,7 +167,46 @@ export class Start extends Phaser.Scene {
         }
     }
 
-    startAdventure() {
+    createFactoryMovingPlatform() {
+        const row = 5;
+        const tiles = [10, 11].map(x => this.platforms.getTileAt(x, row));
+        if (tiles.some(tile => !tile || tile.index <= 0)) return;
+        const segments = tiles.map((tile, i) => {
+            const x = 10 + i;
+            const frame = tile.index - 1;
+            const piece = this.physics.add.image(
+                (x + 0.5) * 18, (row + 0.5) * 18, 'factoryIndustrialFrames', frame
+            ).setDepth(9).setImmovable(true);
+            piece.body.setAllowGravity(false);
+            piece.body.setSize(18, 14);
+            piece.body.setFriction(1, 0);
+            piece.setVelocityX(28);
+            this.platforms.removeTileAt(x, row);
+            return piece;
+        });
+        this.movingPlatforms.push({segments, startX: 10.5 * 18, range: 36, speed: 28});
+    }
+
+    createPoisonZones() {
+        if (this.currentLevel !== 'factory') return;
+        // Support old "posion" spelling so that older maps won't silently lose hazards.
+        const poisonLayer = this.map.getObjectLayer('poison') || this.map.getObjectLayer('posion');
+        if (!poisonLayer) return;
+        for (const obj of poisonLayer.objects) {
+            if ((obj.type || obj.class || obj.name || '').toLowerCase() !== 'dead') continue;
+            if (!(obj.width > 0 && obj.height > 0)) continue;
+            const trigger = this.add.zone(
+                obj.x + obj.width / 2, obj.y + obj.height / 2,
+                obj.width, obj.height
+            );
+            this.physics.add.existing(trigger, true);
+            this.physics.add.overlap(this.player, trigger, () => this.gameOver());
+        }
+    }
+
+    startAdventure(level = 'candy') {
+        this.currentLevel = level === 'factory' ? 'factory' : 'candy';
+        this.registry.set('currentLevel', this.currentLevel);
         this.children.removeAll(true);
         this.inGame = true;
         this.completed = false;
@@ -147,9 +220,17 @@ export class Start extends Phaser.Scene {
         const spawn = character && character.objects[0];
         const x = spawn ? spawn.x + (spawn.width || 24)/2 : 30;
         const y = spawn ? spawn.y - (spawn.height || 24)/2 : 230;
-        this.player = this.physics.add.sprite(x, y, 'character').setDepth(25);
-        this.player.body.setSize(16, 21);
-        this.player.body.setOffset(4, 2);
+        const isFactory = this.currentLevel === 'factory';
+        this.player = this.physics.add.sprite(
+            x, y, isFactory ? 'factoryCharacter' : 'character'
+        ).setDepth(25);
+        if (isFactory) {
+            this.player.body.setSize(12, 15);
+            this.player.body.setOffset(2, 1);
+        } else {
+            this.player.body.setSize(16, 21);
+            this.player.body.setOffset(4, 2);
+        }
         this.player.body.setMaxVelocity(120, 360);
         this.player.setCollideWorldBounds(true);
         this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels+70);
@@ -162,6 +243,7 @@ export class Start extends Phaser.Scene {
                 this.physics.add.collider(this.player, piece);
             }
         }
+        this.createPoisonZones();
 
         const finishLayer = this.map.getObjectLayer('end');
         const goal = finishLayer && finishLayer.objects.find(o => o.type === 'finish');
@@ -170,6 +252,12 @@ export class Start extends Phaser.Scene {
             goal.width, goal.height);
         this.physics.add.existing(this.finish, true);
         this.physics.add.overlap(this.player, this.finish, () => this.completeLevel());
+        if (isFactory) {
+            this.add.text(goal.x + goal.width / 2, goal.y - 6, 'EXIT', {
+                fontFamily: 'Arial, sans-serif', fontStyle: 'bold', fontSize: '10px',
+                color: '#fff59e', stroke: '#332419', strokeThickness: 2
+            }).setOrigin(0.5, 1).setDepth(21);
+        }
 
         this.left = this.input.keyboard.addKey('A');
         this.right = this.input.keyboard.addKey('D');
@@ -254,14 +342,20 @@ export class Start extends Phaser.Scene {
         if (this.completed) return;
         this.completed = true;
         this.player.setVelocity(0, 0);
-        this.scene.start('GameOver', { score: this.score });
+        this.registry.set('finalScore', this.score);
+        this.registry.set('currentLevel', this.currentLevel);
+        this.registry.set('completedLevels', [...this.completedLevels]);
+        this.scene.start('GameOver');
     }
 
     completeLevel() {
         if (this.completed) return;
         this.completed = true;
         this.player.setVelocity(0, 0);
-        this.scene.start('NextLvl', {score: this.score});
+        this.registry.set('finalScore', this.score);
+        this.registry.set('currentLevel', this.currentLevel);
+        this.registry.set('completedLevels', [...new Set([...this.completedLevels, this.currentLevel])]);
+        this.scene.start('NextLvl');
     }
 
     update() {
