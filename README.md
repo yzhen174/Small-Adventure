@@ -31,4 +31,5 @@ LVL 1: Candy: Yuhui
 
 LVL 2: Factory: Darrell
 
+The camera movement, main screen, level select, lose screen, and win screen will be the same. The player will only be able to jump once. There are a total of 3 collectibles in my map, all of which will be required to collect in order to complete the level. 
 #
