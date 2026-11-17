@@ -23,7 +23,7 @@ LVL 1: Candy: Yuhui
     powerup: 2x points
         player will earn 2x point for the collectible that they collect in the map.
 
-    collectiables:
+    collectibles:
         tile_0103(a piece of sushi roll): 30 points
         tile_0104(a piece of salmon sushi): 50 points
         tile _0104(a slice of pizza): 10 points 
