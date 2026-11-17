@@ -31,5 +31,5 @@ LVL 1: Candy: Yuhui
 
 LVL 2: Factory: Darrell
 
-The camera movement, main screen, level select, lose screen, movement, and win screen will be the same. There are a total of 3 collectibles in my map, all of which will be required to collect in order to complete the level. 
+The camera movement, main screen, level select, lose screen, movement, and win screen will be the same. There are a total of 3 collectibles in my map, all of which will be required to collect in order to complete the level. There are a few vats of green poison liquid and if the player dies if he falls into it.
 #
