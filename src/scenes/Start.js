@@ -11,7 +11,7 @@ export class Start extends Phaser.Scene {
             frameWidth: 18, frameHeight: 18, spacing: 1
         });
         this.load.tilemapTiledJSON('tilemap', 'asset/map/small adventure.tmj');
-        this.load.tilemapTiledJSON('factoryMap', 'asset/map/factory.tmj');
+        this.load.tilemapTiledJSON('factoryMap', 'asset/map/level1.tmj');
         this.load.image('factoryIndustrial', 'asset/lvl1/industry (2).png');
         this.load.spritesheet('factoryIndustrialFrames', 'asset/lvl1/industry (2).png', {
             frameWidth: 18, frameHeight: 18

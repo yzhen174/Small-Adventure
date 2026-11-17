@@ -1,4 +1,6 @@
 #
+(for the map asset, small adventure is the candy map and level1 is factory)
+
 Main screen: there will be a main screen that let player choose the start the game(default map will be candy) or check the levels in Level select.
 
 Level Select: Player can check the levels in the game and select the one that they want to play.
@@ -15,6 +17,7 @@ Leveling and Point: player can get exp and points/score by getting the collectib
 
 power ups: there will be also some power ups in the maps for player to collect, each power up will have different effect/buffs
 
+ moving platforms: some of the platform will be moving back and forth.
 
 LVL 1: Candy: Yuhui
     powerup: 2x points
@@ -25,7 +28,6 @@ LVL 1: Candy: Yuhui
         tile_0104(a piece of salmon sushi): 50 points
         tile _0104(a slice of pizza): 10 points 
 
-    moving platforms: some of the platform will be moving back and forth.
 
 LVL 2: Factory: Darrell
 
