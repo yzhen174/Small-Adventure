@@ -192,7 +192,7 @@ export class Start extends Phaser.Scene {
 
     createPoisonZones() {
         if (this.currentLevel !== 'factory') return;
-        const poisonLayer = this.map.getObjectLayer('poison') || this.map.getObjectLayer('posion');
+        const poisonLayer = this.map.getObjectLayer('poison');
         if (!poisonLayer) return;
         for (const obj of poisonLayer.objects) {
             if ((obj.type || obj.class || obj.name || '').toLowerCase() !== 'dead') continue;
