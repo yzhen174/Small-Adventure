@@ -23,7 +23,7 @@ LVL 1: Candy: Yuhui
     powerup: 2x points
         player will earn 2x point for the collectible that they collect in the map.
 
-    collectiables:
+    collectibles:
         tile_0103(a piece of sushi roll): 30 points
         tile_0104(a piece of salmon sushi): 50 points
         tile _0104(a slice of pizza): 10 points 
@@ -31,5 +31,5 @@ LVL 1: Candy: Yuhui
 
 LVL 2: Factory: Darrell
 
-The camera movement, main screen, level select, lose screen, and win screen will be the same. The player will only be able to jump once. There are a total of 3 collectibles in my map, all of which will be required to collect in order to complete the level. 
+The camera movement, main screen, level select, lose screen, movement, and win screen will be the same. There is also double jumping in this level. There are a total of 3 collectibles in my map, all of which will be required to collect in order to complete the level. There are a few vats of green poison liquid and if the player dies if he falls into it. There is also a moving platform that the player can jump on.
 #
